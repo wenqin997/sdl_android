@@ -38,4 +38,32 @@ public class SystemCapability extends RPCStruct {
     }
 
     // TODO: Implement individual capability methods
+
+    public Object getCapabilityForType(SystemCapabilityType type){
+        if(type.equals(SystemCapabilityType.NAVIGATION)){
+            return getObject(Object.class, KEY_NAVIGATION_CAPABILITY);
+        }else if(type.equals(SystemCapabilityType.PHONE_CALL)){
+            return getObject(Object.class, KEY_PHONE_CAPABILITY);
+        }else if(type.equals(SystemCapabilityType.VIDEO_STREAMING)){
+            return getObject(Object.class, KEY_VIDEO_STREAMING_CAPABILITY);
+        }else if(type.equals(SystemCapabilityType.AUDIO_STREAMING)){
+            return getObject(Object.class, KEY_AUDIO_STREAMING_CAPABILITY);
+        }else{
+            return null;
+        }
+    }
+
+    public void setCapabilityForType(SystemCapabilityType type, Object capability){
+        if(type.equals(SystemCapabilityType.NAVIGATION)){
+            setValue(KEY_NAVIGATION_CAPABILITY, (Object) capability);
+        }else if(type.equals(SystemCapabilityType.PHONE_CALL)){
+            setValue(KEY_PHONE_CAPABILITY, (Object) capability);
+        }else if(type.equals(SystemCapabilityType.VIDEO_STREAMING)){
+            setValue(KEY_VIDEO_STREAMING_CAPABILITY, (Object) capability);
+        }else if(type.equals(SystemCapabilityType.AUDIO_STREAMING)){
+            setValue(KEY_AUDIO_STREAMING_CAPABILITY, (Object) capability);
+        }else{
+            return;
+        }
+    }
 }
