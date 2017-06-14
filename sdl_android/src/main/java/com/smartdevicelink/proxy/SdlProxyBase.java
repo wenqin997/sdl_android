@@ -80,6 +80,7 @@ import com.smartdevicelink.proxy.rpc.enums.SdlConnectionState;
 import com.smartdevicelink.proxy.rpc.enums.SdlDisconnectedReason;
 import com.smartdevicelink.proxy.rpc.enums.SdlInterfaceAvailability;
 import com.smartdevicelink.proxy.rpc.enums.SpeechCapabilities;
+import com.smartdevicelink.proxy.rpc.enums.SystemCapabilityType;
 import com.smartdevicelink.proxy.rpc.enums.SystemContext;
 import com.smartdevicelink.proxy.rpc.enums.TextAlignment;
 import com.smartdevicelink.proxy.rpc.enums.UpdateMode;
@@ -87,6 +88,7 @@ import com.smartdevicelink.proxy.rpc.enums.VrCapabilities;
 import com.smartdevicelink.proxy.rpc.listeners.OnPutFileUpdateListener;
 import com.smartdevicelink.proxy.rpc.listeners.OnRPCNotificationListener;
 import com.smartdevicelink.proxy.rpc.listeners.OnRPCResponseListener;
+import com.smartdevicelink.proxy.rpc.listeners.SystemCapabilityListener;
 import com.smartdevicelink.security.SdlSecurityBase;
 import com.smartdevicelink.streaming.StreamRPCPacketizer;
 import com.smartdevicelink.trace.SdlTrace;
@@ -216,6 +218,7 @@ public abstract class SdlProxyBase<proxyListenerType extends IProxyListenerBase>
 	protected String _proxyVersionInfo = null;
 	protected Boolean _bResumeSuccess = false;	
 	protected List<Class<? extends SdlSecurityBase>> _secList = null;
+	protected SystemCapabilityManager _systemCapabilityManager;
 	
 	private CopyOnWriteArrayList<IPutFileResponseListener> _putFileListenerList = new CopyOnWriteArrayList<IPutFileResponseListener>();
 
@@ -2027,6 +2030,7 @@ public abstract class SdlProxyBase<proxyListenerType extends IProxyListenerBase>
 				_hmiCapabilities = msg.getHmiCapabilities();
 				_systemSoftwareVersion = msg.getSystemSoftwareVersion();
 				_proxyVersionInfo = msg.getProxyVersionInfo();
+				_systemCapabilityManager = new SystemCapabilityManager(msg);
 				
 				if (_bAppResumeEnabled)
 				{
@@ -5609,6 +5613,10 @@ public abstract class SdlProxyBase<proxyListenerType extends IProxyListenerBase>
 	public String getPoliciesURL()
 	{
 		return sPoliciesURL;
+	}
+
+	public void getSystemCapability(SystemCapabilityType systemCapabilityType, SystemCapabilityListener scListener){
+		_systemCapabilityManager.getSystemCapability(this, systemCapabilityType, scListener);
 	}
 	
 } // end-class

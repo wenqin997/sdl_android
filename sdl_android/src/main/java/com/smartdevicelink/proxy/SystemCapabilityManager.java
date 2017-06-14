@@ -3,80 +3,77 @@ package com.smartdevicelink.proxy;
 import com.smartdevicelink.exception.SdlException;
 import com.smartdevicelink.proxy.rpc.GetSystemCapability;
 import com.smartdevicelink.proxy.rpc.GetSystemCapabilityResponse;
+import com.smartdevicelink.proxy.rpc.RegisterAppInterfaceResponse;
 import com.smartdevicelink.proxy.rpc.SystemCapability;
 import com.smartdevicelink.proxy.rpc.enums.SystemCapabilityType;
 import com.smartdevicelink.proxy.rpc.listeners.OnRPCResponseListener;
+import com.smartdevicelink.proxy.rpc.listeners.SystemCapabilityListener;
 import com.smartdevicelink.util.CorrelationIdGenerator;
 
 import java.util.HashMap;
 
-/**
- * Created by austinkirk on 6/12/17.
- */
-
 public class SystemCapabilityManager {
-    HashMap<String, Object> cachedSystemCapabilities = new HashMap<>();
-    SdlProxyALM proxy = null;
-    final Object SYS_CAP_LOCK = new Object();
+    HashMap<SystemCapabilityType, Object> cachedSystemCapabilities = new HashMap<>();
+    RegisterAppInterfaceResponse raiResponse;
 
-    public SystemCapabilityManager(SdlProxyALM proxyALM){
-        proxy = proxyALM;
+    public SystemCapabilityManager(RegisterAppInterfaceResponse raiResponse){
+        this.raiResponse = raiResponse;
     }
 
-    public Object getSystemCapability(final SystemCapabilityType systemCapabilityType) throws SdlException {
-        Object obj = cachedSystemCapabilities.get(systemCapabilityType.toString());
+    public void getSystemCapability(SdlProxyBase proxy, final SystemCapabilityType systemCapabilityType, final SystemCapabilityListener scListener){
+        Object obj = cachedSystemCapabilities.get(systemCapabilityType);
         if(obj != null){
-            return obj;
+            scListener.onCapabilityRetrieved(obj);
         }
 
         if(systemCapabilityType.equals(SystemCapabilityType.NAVIGATION)){
-            if(!proxy.getHmiCapabilities().isNavigationAvailable()){
-                return null;
+            if(!raiResponse.getHmiCapabilities().isNavigationAvailable()){
+                scListener.onCapabilityRetrieved(null);
+                return;
             }
         }else if(systemCapabilityType.equals(SystemCapabilityType.PHONE_CALL)){
-            if(!proxy.getHmiCapabilities().isPhoneCallAvailable()){
-                return null;
+            if(!raiResponse.getHmiCapabilities().isPhoneCallAvailable()){
+                scListener.onCapabilityRetrieved(null);
+                return;
             }
         }else if(systemCapabilityType.equals(SystemCapabilityType.VIDEO_STREAMING)){
-            if(!proxy.getHmiCapabilities().isVideoStreamingAvailable()){
-                return null;
+            if(!raiResponse.getHmiCapabilities().isVideoStreamingAvailable()){
+                scListener.onCapabilityRetrieved(null);
+                return;
             }
         }else if(systemCapabilityType.equals(SystemCapabilityType.AUDIO_STREAMING)){
-            if(!proxy.getHmiCapabilities().isAudioStreamingAvailable()){
-                return null;
+            if(!raiResponse.getHmiCapabilities().isAudioStreamingAvailable()){
+                scListener.onCapabilityRetrieved(null);
+                return;
             }
+        }else if(systemCapabilityType.equals(SystemCapabilityType.DISPLAY)){
+            scListener.onCapabilityRetrieved(raiResponse.getDisplayCapabilities());
+            return;
         }
 
-        final GetSystemCapability request = new GetSystemCapability();
-        request.setSystemCapabilityType(systemCapabilityType);
-        request.setOnRPCResponseListener(new OnRPCResponseListener() {
-            @Override
-            public void onResponse(int correlationId, RPCResponse response) {
-                if(response.getSuccess()){
-                    SystemCapability systemCapability = ((GetSystemCapabilityResponse) response).getSystemCapability();
-                    Object capability = systemCapability.getCapabilityForType(systemCapabilityType);
-                    if(capability != null) {
-                        synchronized(SYS_CAP_LOCK){
-                            SYS_CAP_LOCK.notify();
-                        }
-                        cachedSystemCapabilities.put(systemCapabilityType.toString(), capability);
+        if(systemCapabilityType.canRequestFor()){
+            final GetSystemCapability request = new GetSystemCapability();
+            request.setSystemCapabilityType(systemCapabilityType);
+            request.setOnRPCResponseListener(new OnRPCResponseListener() {
+                @Override
+                public void onResponse(int correlationId, RPCResponse response) {
+                    if(response.getSuccess()){
+                        SystemCapability systemCapability = ((GetSystemCapabilityResponse) response).getSystemCapability();
+                        Object capability = systemCapability.getCapabilityForType(systemCapabilityType);
+                        cachedSystemCapabilities.put(systemCapabilityType, capability);
+                        scListener.onCapabilityRetrieved(capability);
                     }
                 }
-            }
-        });
-        request.setCorrelationID(CorrelationIdGenerator.generateId());
-        proxy.sendRPCRequest(request);
-
-        synchronized(SYS_CAP_LOCK) {
+            });
+            request.setCorrelationID(CorrelationIdGenerator.generateId());
             try {
-                SYS_CAP_LOCK.wait();
-            } catch (InterruptedException e) {
+                proxy.sendRPCRequest(request);
+            } catch (SdlException e) {
                 e.printStackTrace();
             }
+        }else{
+            scListener.onCapabilityRetrieved(null);
         }
-
-        obj = cachedSystemCapabilities.get(systemCapabilityType.toString());
-        return obj;
     }
 
 }
