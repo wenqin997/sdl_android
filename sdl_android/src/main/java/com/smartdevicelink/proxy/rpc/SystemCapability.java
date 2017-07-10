@@ -13,6 +13,7 @@ public class SystemCapability extends RPCStruct {
     public static final String KEY_SYSTEM_CAPABILITY_TYPE = "systemCapabilityType";
     public static final String KEY_NAVIGATION_CAPABILITY = "navigationCapability";
     public static final String KEY_PHONE_CAPABILITY = "phoneCapability";
+	public static final String KEY_VIDEO_STREAMING_CAPABILITY = "videoStreamingCapability";
 
     public SystemCapability(){}
 
@@ -40,6 +41,8 @@ public class SystemCapability extends RPCStruct {
             return getObject(Object.class, KEY_NAVIGATION_CAPABILITY);
         }else if(type.equals(SystemCapabilityType.PHONE_CALL)){
             return getObject(Object.class, KEY_PHONE_CAPABILITY);
+        }else if(type.equals(SystemCapabilityType.VIDEO_STREAMING)) {
+            return (VideoStreamingCapability) getObject(VideoStreamingCapability.class, KEY_VIDEO_STREAMING_CAPABILITY);
         }else{
             return null;
         }
